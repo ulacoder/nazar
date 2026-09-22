@@ -45,7 +45,7 @@ Start Session now asks for a Lesson or Exam type and optional teacher/proctor, c
 The dashboard can be hosted on Vercel while the models keep running locally. Vercel serves only the static UI (`vercel.json` runs `node scripts/build_static.mjs` into `dist/`; no Python is deployed). The page calls the local backend at `http://127.0.0.1:8000`, so start `serve.py` as above, then open the Vercel URL in Chrome, Edge or Firefox on the same machine (Chrome may ask to allow access to local network devices). Safari blocks HTTPS pages from calling `http://127.0.0.1`.
 
 - Another backend address: open `https://<vercel-url>/?api=http://host:port` once (remembered in the browser); `?api=` resets it.
-- The local backend only answers cross-origin requests from `https://nazar.vercel.app` and this project's preview URLs. For a custom domain set `NAZAR_ALLOWED_ORIGINS` (comma-separated, `*` wildcard allowed) before launching `serve.py`.
+- The local backend only answers cross-origin requests from `https://nazar.vercel.app`, `https://nazar-ulagats-projects.vercel.app` and this project's preview URLs. For a custom domain set `NAZAR_ALLOWED_ORIGINS` (comma-separated, `*` wildcard allowed) before launching `serve.py`.
 
 ## Every-frame video validation
 

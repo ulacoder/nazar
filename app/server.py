@@ -11,7 +11,7 @@ import csv,io,zipfile,shutil
 
 # Hosted UI (Vercel) calling this local backend. Override with a comma-separated NAZAR_ALLOWED_ORIGINS;
 # entries may use * as a wildcard, e.g. https://nazar-*-ulagats-projects.vercel.app
-DEFAULT_ALLOWED_ORIGINS="https://nazar.vercel.app,https://nazar-*-ulagats-projects.vercel.app"
+DEFAULT_ALLOWED_ORIGINS="https://nazar.vercel.app,https://nazar-ulagats-projects.vercel.app,https://nazar-*-ulagats-projects.vercel.app"
 
 def _origin_matcher(value):
     patterns=[re.escape(o.strip().rstrip('/')).replace(r'\*','[a-z0-9-]*') for o in value.split(',') if o.strip()]
