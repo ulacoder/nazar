@@ -1,0 +1,23 @@
+{
+  "model": "MobileNetV3-Small",
+  "checkpoint": "runs/actions_v2_hardneg/best.pt",
+  "image_size": 224,
+  "outputs": [
+    "READING",
+    "WRITING"
+  ],
+  "thresholds": {
+    "READING": 0.39,
+    "WRITING": 0.41
+  },
+  "validation": {
+    "reading_f1": 0.7920,
+    "writing_f1": 0.6176,
+    "macro_f1": 0.7048
+  },
+  "external_lookup_test": {
+    "samples": 434,
+    "reading_false_positive_rate": 0.0023,
+    "writing_false_positive_rate": 0.0
+  }
+}

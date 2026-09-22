@@ -1,0 +1,30 @@
+﻿{
+  "name": "NAZAR Head Direction V1",
+  "model": "runs/headpose_v2_balanced/best.pt",
+  "outputs": ["pitch", "yaw"],
+  "ground_truth_definition": {
+    "yaw_left_right_deg": 25.0,
+    "pitch_up_deg": 15.0,
+    "pitch_down_deg": -15.0
+  },
+  "prediction_thresholds": {
+    "yaw_left_deg": -23.0,
+    "yaw_right_deg": 23.0,
+    "pitch_up_deg": 12.0,
+    "pitch_down_deg": -14.0
+  },
+  "priority": [
+    "LEFT_RIGHT_BY_YAW",
+    "UP_DOWN_BY_PITCH",
+    "FORWARD"
+  ],
+  "test_metrics": {
+    "accuracy": 0.9568,
+    "macro_f1": 0.8723,
+    "forward_f1": 0.874,
+    "left_f1": 0.985,
+    "right_f1": 0.983,
+    "up_f1": 0.784,
+    "down_f1": 0.736
+  }
+}
