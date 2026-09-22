@@ -5,9 +5,17 @@ from .config import Settings
 from .runtime import Runtime
 from .evidence import evidence_items,recording
 from .videos import imported_filename,inspect_video
-import json
+import json,os,re
 import cv2
 import csv,io,zipfile,shutil
+
+# Hosted UI (Vercel) calling this local backend. Override with a comma-separated NAZAR_ALLOWED_ORIGINS;
+# entries may use * as a wildcard, e.g. https://nazar-*-ulagats-projects.vercel.app
+DEFAULT_ALLOWED_ORIGINS="https://nazar.vercel.app,https://nazar-*-ulagats-projects.vercel.app"
+
+def _origin_matcher(value):
+    patterns=[re.escape(o.strip().rstrip('/')).replace(r'\*','[a-z0-9-]*') for o in value.split(',') if o.strip()]
+    return re.compile('^(?:'+'|'.join(patterns)+')$') if patterns else None
 
 def create_app(settings=None,runtime=None,start_runtime=False):
     settings=settings or Settings.from_env()
@@ -15,6 +23,19 @@ def create_app(settings=None,runtime=None,start_runtime=False):
     app=Flask(__name__)
     app.config["NAZAR_RUNTIME"]=runtime
     if start_runtime: runtime.start()
+    allowed_origins=_origin_matcher(os.getenv("NAZAR_ALLOWED_ORIGINS",DEFAULT_ALLOWED_ORIGINS))
+
+    @app.after_request
+    def cors(response):
+        origin=request.headers.get("Origin")
+        if origin and allowed_origins and allowed_origins.match(origin):
+            response.headers["Access-Control-Allow-Origin"]=origin
+            response.headers["Access-Control-Allow-Methods"]="GET, POST, PATCH, PUT, DELETE, OPTIONS"
+            response.headers["Access-Control-Allow-Headers"]=request.headers.get("Access-Control-Request-Headers","Content-Type")
+            response.headers["Access-Control-Allow-Private-Network"]="true"
+            response.headers["Access-Control-Max-Age"]="600"
+            response.vary.add("Origin")
+        return response
 
     @app.get("/")
     def home(): return render_template("index.html")

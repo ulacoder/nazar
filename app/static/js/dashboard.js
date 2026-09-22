@@ -26,7 +26,7 @@ const durationSeconds = (value) => {
 };
 
 async function api(path,options={}) {
-  const response=await fetch(path,{headers:{'Content-Type':'application/json'},...options});
+  const response=await fetch(nazarUrl(path),{headers:{'Content-Type':'application/json'},...options});
   const data=await response.json();
   if (!response.ok) throw new Error(data.error || t('common.requestFailed',{status:response.status}));
   return data;
@@ -128,7 +128,7 @@ function renderDetail() {
     loadEvidence();
   } else if(detailTab==='recording') {
     const m=s.source_metadata, meta=m?[[t('detail.source'),s.source_type==='VIDEO'?t('detail.originalSource'):t('settings.camera')],[t('detail.filename'),m.filename],[t('detail.duration'),durationSeconds(m.duration_s)],[t('detail.resolution'),m.resolution?.join('×')],[t('detail.fps'),m.fps],[t('detail.status'),t('detail.ready')]]:[];
-    panel.innerHTML=`<div class="detail-facts"><h2>${t('detail.originalSource')}</h2>${meta.map(([key,value])=>`<div class="status-row"><span>${escapeHtml(key)}</span><strong>${escapeHtml(String(value))}</strong></div>`).join('')}</div>${s.timelapse_available ? `<h2>${t('detail.timelapse')}</h2><video id="detail-video" controls preload="metadata" src="/api/timelapse/${s.id}"></video><p class="subheading">${escapeHtml(t('person.seekNote'))}</p>` : `<p class="empty-state">${escapeHtml(t('detail.noRecording'))}</p>`}${sessionEventsMarkup()}`;
+    panel.innerHTML=`<div class="detail-facts"><h2>${t('detail.originalSource')}</h2>${meta.map(([key,value])=>`<div class="status-row"><span>${escapeHtml(key)}</span><strong>${escapeHtml(String(value))}</strong></div>`).join('')}</div>${s.timelapse_available ? `<h2>${t('detail.timelapse')}</h2><video id="detail-video" controls preload="metadata" src="${nazarUrl(`/api/timelapse/${s.id}`)}"></video><p class="subheading">${escapeHtml(t('person.seekNote'))}</p>` : `<p class="empty-state">${escapeHtml(t('detail.noRecording'))}</p>`}${sessionEventsMarkup()}`;
     renderDetailEvents();
   }
 }
@@ -200,7 +200,7 @@ function ensureSourceManager(){
   $$('input[name="source-choice"]').forEach(node=>node.addEventListener('change',()=>setSourcePanel(node.value)));
   $('#camera-selector').addEventListener('change',async event=>{try{await api('/api/camera/select',{method:'POST',body:JSON.stringify({device_id:event.target.value})});toast(t('common.saved'));await loadSettings()}catch(error){toast(error.message,true)}});
   $('#camera-rescan').addEventListener('click',()=>loadCameras($('#camera-selector').value,true));
-  $('#camera-preview-button').addEventListener('click',()=>{const id=$('#camera-selector').value;if(id)$('#camera-preview').src=`/api/camera/preview?device_id=${encodeURIComponent(id)}&t=${Date.now()}`;else toast(t('settings.noCameras'),true)});
+  $('#camera-preview-button').addEventListener('click',()=>{const id=$('#camera-selector').value;if(id)$('#camera-preview').src=NAZAR_API+`/api/camera/preview?device_id=${encodeURIComponent(id)}&t=${Date.now()}`;else toast(t('settings.noCameras'),true)});
   $('#video-file').addEventListener('change',event=>{const file=event.target.files[0];if(file)uploadVideo(file)});
   const drop=$('#video-dropzone');['dragenter','dragover'].forEach(name=>drop.addEventListener(name,event=>{event.preventDefault();drop.classList.add('dragging')}));['dragleave','drop'].forEach(name=>drop.addEventListener(name,event=>{event.preventDefault();drop.classList.remove('dragging')}));drop.addEventListener('drop',event=>{const file=event.dataTransfer.files[0];if(file)uploadVideo(file)});
 }
@@ -214,8 +214,8 @@ async function loadCameras(selected='',rescan=false){
 function uploadVideo(file){
   const info=$('#video-info');info.hidden=false;info.textContent=`${t('settings.uploading')} ${file.name}`;
   const form=new FormData();form.append('video',file);
-  const xhr=new XMLHttpRequest();xhr.open('POST','/api/videos/import');xhr.upload.onprogress=event=>{if(event.lengthComputable)info.textContent=`${t('settings.uploading')} ${Math.round(event.loaded/event.total*100)}%`};
-  xhr.onload=()=>{let data={};try{data=JSON.parse(xhr.responseText)}catch(error){}if(xhr.status<200||xhr.status>=300){info.textContent=data.error||t('settings.videoImportFailed');toast(info.textContent,true);return}const m=data;info.innerHTML=`<strong>${escapeHtml(t('settings.videoReady'))}</strong> · ${escapeHtml(m.filename)}<br>${escapeHtml(t('settings.duration'))}: ${m.duration_s==null?'—':m.duration_s+' s'} · ${escapeHtml(t('settings.resolution'))}: ${m.resolution.join(' × ')} · ${escapeHtml(t('settings.frameRate'))}: ${m.fps||'—'} · ${escapeHtml(t('settings.fileSize'))}: ${(m.size_bytes/1048576).toFixed(1)} MB`;const preview=$('#video-preview');preview.src=data.url;preview.hidden=false;setSourcePanel('VIDEO');toast(t('settings.videoReady'));loadSettings()};xhr.onerror=()=>{info.textContent=t('settings.videoImportFailed');toast(info.textContent,true)};xhr.send(form);
+  const xhr=new XMLHttpRequest();xhr.open('POST',nazarUrl('/api/videos/import'));xhr.upload.onprogress=event=>{if(event.lengthComputable)info.textContent=`${t('settings.uploading')} ${Math.round(event.loaded/event.total*100)}%`};
+  xhr.onload=()=>{let data={};try{data=JSON.parse(xhr.responseText)}catch(error){}if(xhr.status<200||xhr.status>=300){info.textContent=data.error||t('settings.videoImportFailed');toast(info.textContent,true);return}const m=data;info.innerHTML=`<strong>${escapeHtml(t('settings.videoReady'))}</strong> · ${escapeHtml(m.filename)}<br>${escapeHtml(t('settings.duration'))}: ${m.duration_s==null?'—':m.duration_s+' s'} · ${escapeHtml(t('settings.resolution'))}: ${m.resolution.join(' × ')} · ${escapeHtml(t('settings.frameRate'))}: ${m.fps||'—'} · ${escapeHtml(t('settings.fileSize'))}: ${(m.size_bytes/1048576).toFixed(1)} MB`;const preview=$('#video-preview');preview.src=nazarUrl(data.url);preview.hidden=false;setSourcePanel('VIDEO');toast(t('settings.videoReady'));loadSettings()};xhr.onerror=()=>{info.textContent=t('settings.videoImportFailed');toast(info.textContent,true)};xhr.send(form);
 }
 function setSourceLock(locked){['#camera-selector','#camera-rescan','#camera-preview-button','#video-file'].forEach(selector=>{const node=$(selector);if(node)node.disabled=locked});$$('input[name="source-choice"]').forEach(node=>node.disabled=locked)}
 
@@ -231,7 +231,7 @@ async function saveOverlay(name,checked) {
 }
 
 function connectLive() {
-  const source=new EventSource('/api/live');
+  const source=new EventSource(nazarUrl('/api/live'));
   source.onmessage=(event)=>{try{renderLive(JSON.parse(event.data))}catch(error){console.error(error)}};
   source.onerror=()=>{$('#top-status-text').textContent=t('status.connecting')};
 }
@@ -244,7 +244,7 @@ document.addEventListener('click',async(event)=>{
   const tab=event.target.closest('[data-detail-tab]');if(tab){detailTab=tab.dataset.detailTab;renderDetail();return}
   const timeline=event.target.closest('[data-person-timeline]');if(timeline){detailTab='analytics';renderDetail();setTimeout(()=>{const card=document.querySelector(`[data-person-track="${timeline.dataset.personTimeline}"]`);if(card){card.open=true;card.scrollIntoView({block:'center'})}},0);return}
   const personEvidence=event.target.closest('[data-person-evidence]');if(personEvidence){detailTab='evidence';renderDetail();setTimeout(()=>{$('#evidence-person').value=personEvidence.dataset.personEvidence;loadEvidence()},0);return}
-  if(event.target.id==='export-session'){const b=event.target;b.disabled=true;b.textContent=t('detail.exporting');try{const res=await fetch(`/api/sessions/${openSessionId}/export`);if(!res.ok)throw Error(t('detail.exportFailed'));const blob=await res.blob(),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`nazar-session-${openSessionId}.zip`;a.click();URL.revokeObjectURL(url);b.textContent=t('detail.exportReady')}catch(e){b.disabled=false;b.textContent=t('detail.exportFailed');toast(e.message,true)}return}
+  if(event.target.id==='export-session'){const b=event.target;b.disabled=true;b.textContent=t('detail.exporting');try{const res=await fetch(nazarUrl(`/api/sessions/${openSessionId}/export`));if(!res.ok)throw Error(t('detail.exportFailed'));const blob=await res.blob(),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`nazar-session-${openSessionId}.zip`;a.click();URL.revokeObjectURL(url);b.textContent=t('detail.exportReady')}catch(e){b.disabled=false;b.textContent=t('detail.exportFailed');toast(e.message,true)}return}
   if(event.target.id==='delete-session'){if(!confirm(t('detail.deleteConfirm')))return;event.target.disabled=true;try{await api(`/api/sessions/${openSessionId}?confirm=1`,{method:'DELETE'});openSessionId=null;detailData=null;showPage('sessions');loadSessions()}catch(e){event.target.disabled=false;toast(e.message,true)}return}
   if(event.target.closest('#start-button')){$('#session-modal').hidden=false;selectedMode=null;$('#session-form').hidden=true;$$('[data-mode]').forEach(x=>x.classList.remove('selected'));fillRecent();return}
   if(event.target.id==='close-modal'||event.target.id==='session-modal'){$('#session-modal').hidden=true;return}
@@ -283,7 +283,7 @@ $$('#page-events select,#page-events input').forEach(node=>node.addEventListener
 $('#language-select').addEventListener('change',(event)=>setLanguage(event.target.value));
 $('#theme-toggle').addEventListener('click',()=>setTheme(getTheme()==='dark'?'light':'dark'));
 document.addEventListener('nazar:languagechange',()=>{
-  $('#camera-image').src='/stream?lang='+encodeURIComponent(getLanguage());
+  $('#camera-image').src=nazarUrl('/stream')+'?lang='+encodeURIComponent(getLanguage());
   applyI18n();
   if(liveState) renderLive(liveState);
   if(activePage==='sessions') loadSessions();
@@ -297,7 +297,7 @@ window.addEventListener('hashchange',()=>{const page=location.hash.slice(1);if([
 setInterval(()=>{if(liveState?.session)$('#metric-timer').textContent=duration(liveState.session.started_at)},1000);
 setInterval(()=>{if(activePage==='system')loadSystem()},1000);
 
-$('#camera-image').src='/stream?lang='+encodeURIComponent(getLanguage());
+$('#camera-image').src=nazarUrl('/stream')+'?lang='+encodeURIComponent(getLanguage());
 applyI18n();
 setTheme(getTheme());
 showPage(['live','sessions','events','system','settings'].includes(location.hash.slice(1))?location.hash.slice(1):'live');
@@ -328,7 +328,7 @@ document.addEventListener('click',event=>{
   const idx=evidencePage.findIndex(e=>e.id===item.id),clipStart=item.recording_start_s||0,clipEnd=item.recording_end_s||0,eventStart=Math.max(0,(item.event_start_s||item.session_offset_s||0)-clipStart),eventEnd=Math.max(eventStart,(item.event_end_s||item.session_offset_s||0)-clipStart),clipLength=Math.max(clipEnd-clipStart,eventEnd,0.1),left=Math.max(0,Math.min(100,eventStart/clipLength*100)),width=Math.max(2,Math.min(100-left,(eventEnd-eventStart)/clipLength*100));
   target.innerHTML=`<div class="evidence-viewer-head"><strong>${escapeHtml((item.role||'UNKNOWN')+' #'+item.track_id)}</strong><br>${escapeHtml(label(item.event_type))} · ${escapeHtml(item.review_priority||'REVIEW')}</div><p>${t('detail.event')}: ${relativeTime(item.event_start_s||item.session_offset_s)} – ${relativeTime(item.event_end_s||item.session_offset_s)} · ${t('detail.evidence')}: ${relativeTime(item.evidence_start_s)} – ${relativeTime(item.evidence_end_s)} · ${t('detail.duration')}: ${item.duration_s==null?'—':Number(item.duration_s).toFixed(1)+' s'}<br>${escapeHtml(item.reason||t('detail.reviewMoments'))}</p>${item.status==='PROCESSING'?`<p class="notice">${t('status.processing')}</p>`:item.status==='UNAVAILABLE'?`<p class="notice">${escapeHtml(item.unavailable_reason||t('detail.noRecording'))}</p>`:`<video id="evidence-video" controls preload="metadata"></video><div class="evidence-marker"><small>0:00</small><span><i style="left:${left}%;width:${width}%">${t('detail.event')}</i></span><small>${relativeTime(clipLength)}</small></div><p>${t('detail.eventBegins')} ${relativeTime(eventStart)}.</p>`}<div class="evidence-nav"><button class="row-button" data-evidence-index="${idx-1}" ${idx<=0?'disabled':''}>${t('detail.previous')}</button><button class="row-button" data-evidence-index="${idx+1}" ${idx<0||idx>=evidencePage.length-1?'disabled':''}>${t('detail.next')}</button></div>`;
   if(item.status==='PROCESSING'||item.status==='UNAVAILABLE')return;
-  const video=$('#evidence-video');video.src=item.clip_available?item.clip_url:item.recording_url;
+  const video=$('#evidence-video');video.src=nazarUrl(item.clip_available?item.clip_url:item.recording_url);
   const start=item.clip_available?0:item.recording_start_s,end=item.clip_available?null:item.recording_end_s;
   video.addEventListener('loadedmetadata',()=>{video.currentTime=Math.min(start,video.duration);video.play().catch(()=>{})},{once:true});
   if(end!=null)video.addEventListener('timeupdate',()=>{if(video.currentTime>=end)video.pause()});

@@ -22,7 +22,7 @@ function renderLivePeople(state){
   }
   window.NazarPerf.liveRenders++;window.NazarPerf.liveRenderMs+=performance.now()-started;
 }
-document.addEventListener('change',async event=>{const select=event.target.closest('[data-role-person]');if(!select)return;const response=await fetch(`/api/session/people/${select.dataset.rolePerson}/role`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({role:select.value})});if(!response.ok)select.value='UNKNOWN';});
+document.addEventListener('change',async event=>{const select=event.target.closest('[data-role-person]');if(!select)return;const response=await fetch(nazarUrl(`/api/session/people/${select.dataset.rolePerson}/role`),{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({role:select.value})});if(!response.ok)select.value='UNKNOWN';});
 function relativeTime(value){if(value==null)return '—';const s=Math.max(0,Math.floor(value));return [Math.floor(s/3600),Math.floor(s/60)%60,s%60].map(x=>String(x).padStart(2,'0')).join(':')}
 function eventOptions(){return `<option value="">${escapeHtml(t('events.allTypes'))}</option>`+detailData.event_distribution.map(x=>`<option value="${escapeHtml(x.event_type)}">${escapeHtml(label(x.event_type))}</option>`).join('')}
 function sessionEventsMarkup(){return `<div class="filter-row"><label>${escapeHtml(t('events.allTypes'))}<select id="detail-event-type">${eventOptions()}</select></label><label>${escapeHtml(t('person.student'))}<select id="detail-event-track"><option value="">${escapeHtml(t('detail.allTracks'))}</option>${detailData.track_ids.map(id=>`<option value="${id}">#${id}</option>`).join('')}</select></label></div><div id="detail-event-list"></div>`}

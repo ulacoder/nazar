@@ -40,6 +40,13 @@ Open `http://127.0.0.1:8000/`. In Video mode, pressing Start Lesson or Start Exa
 
 Start Session now asks for a Lesson or Exam type and optional teacher/proctor, class/group, subject/exam, and notes, followed by explicit confirmation. It stores only session context, never student names. Recent teacher/class/subject values are offered locally in this browser. Existing sessions without metadata remain readable. Open Sessions → Open to view that session's Overview, Events, Analytics, and Timelapse; the main navigation has no global Analytics page. The session-specific API is `GET /api/sessions/<id>/analytics`, with observations and events strictly restricted to `<id>`. Chart numbers are confirmed event occurrences, not time spent in a state. Historic event end times were not persisted, so no durations are inferred; old sessions have no people-over-time samples. Event-to-timelapse seeking is approximate when timing metadata exists.
 
+## Hosted dashboard (Vercel)
+
+The dashboard can be hosted on Vercel while the models keep running locally. Vercel serves only the static UI (`vercel.json` runs `node scripts/build_static.mjs` into `dist/`; no Python is deployed). The page calls the local backend at `http://127.0.0.1:8000`, so start `serve.py` as above, then open the Vercel URL in Chrome, Edge or Firefox on the same machine (Chrome may ask to allow access to local network devices). Safari blocks HTTPS pages from calling `http://127.0.0.1`.
+
+- Another backend address: open `https://<vercel-url>/?api=http://host:port` once (remembered in the browser); `?api=` resets it.
+- The local backend only answers cross-origin requests from `https://nazar.vercel.app` and this project's preview URLs. For a custom domain set `NAZAR_ALLOWED_ORIGINS` (comma-separated, `*` wildcard allowed) before launching `serve.py`.
+
 ## Every-frame video validation
 
 ```powershell
