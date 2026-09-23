@@ -26,7 +26,9 @@ const durationSeconds = (value) => {
 };
 
 async function api(path,options={}) {
-  const response=await fetch(nazarUrl(path),{headers:{'Content-Type':'application/json'},...options});
+  let response;
+  try {response=await fetch(nazarUrl(path),{headers:{'Content-Type':'application/json'},...options});}
+  catch(error) {throw new Error(t('common.backendUnreachable',{url:window.NAZAR_API||location.origin}));}
   const data=await response.json();
   if (!response.ok) throw new Error(data.error || t('common.requestFailed',{status:response.status}));
   return data;
